@@ -15,6 +15,8 @@ npm run start:dev
 
 The database is available at `localhost:5432` and its data is stored in the `postgres_data` volume. `DB_SYNCHRONIZE=true` is intended for local development only; schema synchronization is disabled when `NODE_ENV=production`.
 
+Set `CORS_ORIGINS` to a comma-separated list of allowed frontend origins. For Render, configure it with the exact deployed frontend URL, for example `https://your-frontend.onrender.com`.
+
 Also can find the dump database in the repo to use in case of restore with seeded data.
 
 ## API documentation
