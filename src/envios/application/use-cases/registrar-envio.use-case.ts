@@ -6,8 +6,7 @@ import { failure, success, type EnvioError, type Result } from '../result';
 
 export interface RegistrarEnvioCommand {
   compraId: string;
-  fechaEnvio: string;
-  estado: string;
+  fechaCompra: string;
   domicilio: string;
 }
 
@@ -19,14 +18,21 @@ export class RegistrarEnvioUseCase {
   ) {}
 
   async execute(command: RegistrarEnvioCommand): Promise<Result<Envio, EnvioError>> {
+    try {
+      const existing = await this.repository.estadoEnvioPorCompra(command.compraId);
+      if (existing) return success(existing);
+    } catch {
+      return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible consultar el envío existente.' });
+    }
+
     let envio: Envio;
 
     try {
       envio = new Envio(
         randomUUID(),
         command.compraId,
-        command.fechaEnvio,
-        command.estado,
+        this.calcularFechaEntrega(command.fechaCompra),
+        'PROCESO',
         command.domicilio,
       );
     } catch (error) {
@@ -39,7 +45,22 @@ export class RegistrarEnvioUseCase {
     try {
       return success(await this.repository.guardarEnvio(envio));
     } catch {
+      try {
+        const existing = await this.repository.estadoEnvioPorCompra(command.compraId);
+        if (existing) return success(existing);
+      } catch {
+        return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible confirmar el envío registrado.' });
+      }
       return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible registrar el envío.' });
     }
+  }
+
+  private calcularFechaEntrega(fechaCompra: string): string {
+    const fecha = new Date(`${fechaCompra.replace(' ', 'T')}Z`);
+    if (Number.isNaN(fecha.getTime())) {
+      throw new Error('La fecha de creación de la compra no es válida.');
+    }
+    fecha.setUTCDate(fecha.getUTCDate() + 3);
+    return fecha.toISOString().slice(0, 10);
   }
 }

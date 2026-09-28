@@ -1,7 +1,8 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { CompraOrmEntity } from '../../../../compras/infraestructure/persistence/entities/compra.orm-entity';
 
 @Entity({ name: 'envios' })
+@Unique('UQ_envios_compra_id', ['compra'])
 export class EnvioOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

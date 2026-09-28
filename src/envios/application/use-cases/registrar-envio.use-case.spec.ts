@@ -8,8 +8,7 @@ describe('RegistrarEnvioUseCase', () => {
 
   const command: RegistrarEnvioCommand = {
     compraId: 'compra-1',
-    fechaEnvio: '2026-09-27',
-    estado: 'PREPARANDO',
+    fechaCompra: '2026-09-28 10:30:00',
     domicilio: 'Calle 123',
   };
 
@@ -18,6 +17,7 @@ describe('RegistrarEnvioUseCase', () => {
       guardarEnvio: jest.fn(),
       estadoEnvioPorCompra: jest.fn(),
     };
+    repository.estadoEnvioPorCompra.mockResolvedValue(null);
     useCase = new RegistrarEnvioUseCase(repository);
   });
 
@@ -30,18 +30,28 @@ describe('RegistrarEnvioUseCase', () => {
     if (!result.ok) return;
     expect(result.value).toBeInstanceOf(Envio);
     expect(result.value.compraId).toBe(command.compraId);
-    expect(result.value.fechaEnvio).toBe(command.fechaEnvio);
+    expect(result.value.fechaEnvio).toBe('2026-10-01');
+    expect(result.value.estado).toBe('PROCESO');
+    expect(result.value.domicilio).toBe(command.domicilio);
     expect(repository.guardarEnvio).toHaveBeenCalledWith(result.value);
   });
 
   it('devuelve error de validación para una fecha inválida', async () => {
-    await expect(useCase.execute({ ...command, fechaEnvio: '27-09-2026' })).resolves.toEqual({
+    await expect(useCase.execute({ ...command, fechaCompra: 'fecha-invalida' })).resolves.toEqual({
       ok: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: expect.stringContaining('yyyy-mm-dd'),
+        message: expect.stringContaining('fecha de creación'),
       },
     });
+    expect(repository.guardarEnvio).not.toHaveBeenCalled();
+  });
+
+  it('devuelve el envío existente y evita duplicarlo', async () => {
+    const existing = new Envio('envio-existing', command.compraId, '2026-10-01', 'PROCESO', command.domicilio);
+    repository.estadoEnvioPorCompra.mockResolvedValue(existing);
+
+    await expect(useCase.execute(command)).resolves.toEqual({ ok: true, value: existing });
     expect(repository.guardarEnvio).not.toHaveBeenCalled();
   });
 

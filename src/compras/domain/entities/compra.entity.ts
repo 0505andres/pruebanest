@@ -14,6 +14,7 @@ export class Compra {
     public readonly total: number,
     public readonly items: Item[],
     public readonly inventarioRestituido = false,
+    public readonly domicilioCliente = '',
   ) {
     if (!clienteId || clienteId.trim().length === 0) {
       throw new Error('El cliente de la compra es obligatorio.');

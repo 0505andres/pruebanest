@@ -16,6 +16,7 @@ export class CompraMapper {
       Number(raw.total),
       (raw.items ?? []).map((item) => ItemMapper.toDomain(item, raw.id)),
       raw.inventarioRestituido,
+      raw.cliente.domicilio,
     );
   }
 

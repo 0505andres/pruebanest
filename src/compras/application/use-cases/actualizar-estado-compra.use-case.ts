@@ -3,12 +3,14 @@ import { COMPRA_REPOSITORY_PORT, type CompraRepositoryPort } from '../../domain/
 import { Compra } from '../../domain/entities/compra.entity';
 import { failure, success, type CompraError, type Result } from '../result';
 import { PRODUCTO_REPOSITORY_PORT, type ProductoRepositoryPort } from '../../../stock/domain/ports/producto.repository-port';
+import { RegistrarEnvioUseCase } from '../../../envios/application/use-cases/registrar-envio.use-case';
 
 @Injectable()
 export class ActualizarEstadoCompraUseCase {
   constructor(
     @Inject(COMPRA_REPOSITORY_PORT) private readonly repository: CompraRepositoryPort,
     @Inject(PRODUCTO_REPOSITORY_PORT) private readonly productoRepository: ProductoRepositoryPort,
+    private readonly registrarEnvioUseCase: RegistrarEnvioUseCase,
   ) {}
 
   async execute(codigo: string, estado: string): Promise<Result<Compra, CompraError>> {
@@ -49,7 +51,22 @@ export class ActualizarEstadoCompraUseCase {
           estadoNormalizado,
           inventarioRestituido,
         );
-        if (compra) return success(compra);
+        if (compra) {
+          if (estadoNormalizado === 'APPROVED') {
+            const envio = await this.registrarEnvioUseCase.execute({
+              compraId: compra.id,
+              fechaCompra: compra.fecha,
+              domicilio: compra.domicilioCliente,
+            });
+            if (!envio.ok) {
+              return failure({
+                code: 'PERSISTENCE_ERROR',
+                message: `La compra fue aprobada, pero no se pudo registrar su envío: ${envio.error.message}`,
+              });
+            }
+          }
+          return success(compra);
+        }
       } catch {
         const compensado = await this.compensarMovimiento(movimiento, productos);
         if (!compensado) {
