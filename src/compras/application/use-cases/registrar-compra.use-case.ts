@@ -14,7 +14,6 @@ export interface RegistrarCompraItemCommand {
 
 export interface RegistrarCompraCommand {
   clienteId: string;
-  estado: string;
   codigo: string;
   fecha: string;
   subtotal: number;
@@ -42,7 +41,7 @@ export class RegistrarCompraUseCase {
         randomUUID(), compraId, item.productoId, item.cantidad, item.valorUnitario, item.valorTotal,
       ));
       compra = new Compra(
-        compraId, command.clienteId, command.estado, command.codigo, command.fecha,
+        compraId, command.clienteId, 'PENDIENTE', command.codigo, command.fecha,
         command.subtotal, command.impuesto, command.total, items,
       );
     } catch (error) {

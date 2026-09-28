@@ -8,7 +8,6 @@ describe('RegistrarCompraUseCase', () => {
 
   const command: RegistrarCompraCommand = {
     clienteId: 'cliente-1',
-    estado: 'PENDIENTE',
     codigo: 'COM-001',
     fecha: '2026-09-27 10:30:00',
     subtotal: 100,
@@ -36,6 +35,7 @@ describe('RegistrarCompraUseCase', () => {
     if (!result.ok) return;
     expect(result.value).toBeInstanceOf(Compra);
     expect(result.value.codigo).toBe(command.codigo);
+    expect(result.value.estado).toBe('PENDIENTE');
     expect(result.value.items).toHaveLength(1);
     expect(repository.guardarCompra).toHaveBeenCalledWith(result.value);
   });

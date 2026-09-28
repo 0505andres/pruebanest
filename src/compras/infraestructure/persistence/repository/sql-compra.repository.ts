@@ -31,13 +31,13 @@ export class SqlCompraRepository implements CompraRepositoryPort {
   }
 
   async actualizarEstadoCompra(codigo: string, estado: string): Promise<Compra | null> {
-    const entity = await this.repository.findOne({
+    const result = await this.repository.update({ codigo }, { estado });
+    if (!result.affected) return null;
+
+    const updated = await this.repository.findOne({
       where: { codigo },
       relations: { cliente: true, items: { producto: true } },
     });
-    if (!entity) return null;
-    entity.estado = estado;
-    const updated = await this.repository.save(entity);
-    return CompraMapper.toDomain(updated);
+    return updated ? CompraMapper.toDomain(updated) : null;
   }
 }

@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -11,6 +12,15 @@ async function bootstrap() {
     transform: true, // Convierte los tipos automáticamente 
   }),
   );
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Pruebanest API')
+    .setDescription('Endpoints para clientes, productos, compras y envíos.')
+    .setVersion('1.0')
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, swaggerDocument);
+
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();
