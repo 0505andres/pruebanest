@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsNumber, IsString, Matches, Min, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsArray, IsInt, IsNotEmpty, IsNumber, IsString, Min, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CrearCompraItemDto {
@@ -33,38 +33,15 @@ export class CrearCompraDto {
   @IsNotEmpty()
   clienteId!: string;
 
-  @ApiProperty({ example: 'COM-001' })
-  @IsString()
-  @IsNotEmpty()
-  codigo!: string;
-
-  @ApiProperty({ example: '2026-09-27 10:30:00', description: 'Fecha en formato yyyy-mm-dd hh:mm:ss.' })
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/, {
-    message: 'La fecha debe tener el formato yyyy-mm-dd hh:mm:ss.',
-  })
-  fecha!: string;
-
   @ApiProperty({ example: 100.5, minimum: 0 })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   subtotal!: number;
 
-  @ApiProperty({ example: 19.1, minimum: 0 })
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  impuesto!: number;
-
-  @ApiProperty({ example: 119.6, minimum: 0 })
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  total!: number;
-
-  @ApiProperty({ type: () => [CrearCompraItemDto] })
+  @ApiProperty({ type: () => [CrearCompraItemDto], minItems: 1 })
   @IsArray()
+  @ArrayMinSize(1, { message: 'La compra debe tener al menos un item.' })
   @ValidateNested({ each: true })
   @Type(() => CrearCompraItemDto)
   items!: CrearCompraItemDto[];

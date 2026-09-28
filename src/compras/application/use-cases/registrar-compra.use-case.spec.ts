@@ -8,11 +8,7 @@ describe('RegistrarCompraUseCase', () => {
 
   const command: RegistrarCompraCommand = {
     clienteId: 'cliente-1',
-    codigo: 'COM-001',
-    fecha: '2026-09-27 10:30:00',
     subtotal: 100,
-    impuesto: 19,
-    total: 119,
     items: [{ productoId: 'producto-1', cantidad: 2, valorUnitario: 50, valorTotal: 100 }],
   };
 
@@ -34,8 +30,11 @@ describe('RegistrarCompraUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value).toBeInstanceOf(Compra);
-    expect(result.value.codigo).toBe(command.codigo);
+    expect(result.value.codigo).toMatch(/^\d{7}$/);
+    expect(result.value.fecha).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     expect(result.value.estado).toBe('PENDIENTE');
+    expect(result.value.impuesto).toBe(19);
+    expect(result.value.total).toBe(119);
     expect(result.value.items).toHaveLength(1);
     expect(repository.guardarCompra).toHaveBeenCalledWith(result.value);
   });
@@ -47,7 +46,7 @@ describe('RegistrarCompraUseCase', () => {
       ok: false,
       error: {
         code: 'DUPLICATE_CODE',
-        message: expect.stringContaining(command.codigo),
+        message: expect.stringContaining('único'),
       },
     });
     expect(repository.guardarCompra).not.toHaveBeenCalled();
