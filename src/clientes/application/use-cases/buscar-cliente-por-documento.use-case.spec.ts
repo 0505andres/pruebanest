@@ -1,4 +1,3 @@
-import { NotFoundException } from '@nestjs/common';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { ClienteRepositoryPort } from '../../domain/ports/cliente.repository-port';
 import { ClienteEmail } from '../../domain/value-objects/cliente-email.vo';
@@ -30,23 +29,46 @@ describe('BuscarClientePorDocumentoUseCase', () => {
   it('devuelve el cliente encontrado por su número de documento', async () => {
     repository.buscarPorDocumento.mockResolvedValue(cliente);
 
-    await expect(useCase.execute(numeroDocumento)).resolves.toBe(cliente);
+    await expect(useCase.execute(numeroDocumento)).resolves.toEqual({
+      ok: true,
+      value: cliente,
+    });
     expect(repository.buscarPorDocumento).toHaveBeenCalledWith(numeroDocumento);
   });
 
   it('lanza NotFoundException cuando no existe el cliente', async () => {
     repository.buscarPorDocumento.mockResolvedValue(null);
 
-    await expect(useCase.execute(numeroDocumento)).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(useCase.execute(numeroDocumento)).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'CLIENT_NOT_FOUND',
+        message: expect.stringContaining(numeroDocumento),
+      },
+    });
     expect(repository.buscarPorDocumento).toHaveBeenCalledWith(numeroDocumento);
   });
 
   it('rechaza un número de documento inválido antes de consultar el repositorio', async () => {
-    await expect(useCase.execute('123')).rejects.toThrow(
-      'debe tener entre 5 y 20 caracteres',
-    );
+    await expect(useCase.execute('123')).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: expect.stringContaining('debe tener entre 5 y 20 caracteres'),
+      },
+    });
     expect(repository.buscarPorDocumento).not.toHaveBeenCalled();
+  });
+
+  it('devuelve un error de persistencia si falla el repositorio', async () => {
+    repository.buscarPorDocumento.mockRejectedValue(new Error('database unavailable'));
+
+    await expect(useCase.execute(numeroDocumento)).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'PERSISTENCE_ERROR',
+        message: 'No fue posible consultar el cliente.',
+      },
+    });
   });
 });

@@ -1,5 +1,5 @@
-import { ClienteEmail } from '../value-objects/cliente-email.vo';
-import { NumeroDocumento } from '../value-objects/numero-documento.vo';
+import { ClienteEmail } from './../value-objects/cliente-email.vo';
+import { NumeroDocumento } from './../value-objects/numero-documento.vo';
 
 export class Cliente {
   constructor(

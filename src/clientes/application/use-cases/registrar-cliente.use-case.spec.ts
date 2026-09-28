@@ -1,4 +1,3 @@
-import { ConflictException } from '@nestjs/common';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { ClienteRepositoryPort } from '../../domain/ports/cliente.repository-port';
 import { ClienteEmail } from '../../domain/value-objects/cliente-email.vo';
@@ -32,8 +31,11 @@ describe('RegistrarClienteUseCase', () => {
     const result = await useCase.execute(command);
 
     expect(repository.buscarPorDocumento).toHaveBeenCalledWith(command.numeroDocumento);
-    expect(repository.guardar).toHaveBeenCalledWith(result);
-    expect(result).toEqual(
+    expect(repository.guardar).toHaveBeenCalledWith(result.value);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toEqual(
       expect.objectContaining({
         id: expect.any(String),
         nombre: command.nombre,
@@ -56,21 +58,47 @@ describe('RegistrarClienteUseCase', () => {
     );
     repository.buscarPorDocumento.mockResolvedValue(existingCliente);
 
-    await expect(useCase.execute(command)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(command)).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'DUPLICATE_DOCUMENT',
+        message: expect.stringContaining(command.numeroDocumento),
+      },
+    });
     expect(repository.guardar).not.toHaveBeenCalled();
   });
 
   it('rechaza un número de documento inválido antes de consultar el repositorio', async () => {
-    await expect(
-      useCase.execute({ ...command, numeroDocumento: '123' }),
-    ).rejects.toThrow('debe tener entre 5 y 20 caracteres');
+    await expect(useCase.execute({ ...command, numeroDocumento: '123' })).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: expect.stringContaining('debe tener entre 5 y 20 caracteres'),
+      },
+    });
     expect(repository.buscarPorDocumento).not.toHaveBeenCalled();
   });
 
   it('rechaza un correo sin dominio válido antes de consultar el repositorio', async () => {
-    await expect(
-      useCase.execute({ ...command, correo: 'ana@example' }),
-    ).rejects.toThrow('no es válido');
+    await expect(useCase.execute({ ...command, correo: 'ana@example' })).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: expect.stringContaining('no es válido'),
+      },
+    });
     expect(repository.buscarPorDocumento).not.toHaveBeenCalled();
+  });
+
+  it('devuelve un error de persistencia si falla el repositorio', async () => {
+    repository.buscarPorDocumento.mockRejectedValue(new Error('database unavailable'));
+
+    await expect(useCase.execute(command)).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'PERSISTENCE_ERROR',
+        message: 'No fue posible registrar el cliente.',
+      },
+    });
   });
 });

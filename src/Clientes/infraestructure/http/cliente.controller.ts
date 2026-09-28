@@ -1,6 +1,18 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    ConflictException,
+    Controller,
+    Get,
+    InternalServerErrorException,
+    NotFoundException,
+    Param,
+    Post,
+} from '@nestjs/common';
 import { RegistrarClienteUseCase } from '../../application/use-cases/registrar-cliente.use-case';
 import { BuscarClientePorDocumentoUseCase } from '../../application/use-cases/buscar-cliente-por-documento.use-case';
+import type { ClienteError } from '../../application/result';
+import { ClienteRespuestaDto } from './dtos/cliente-respuesta.dto';
 import { CrearClienteDto } from './dtos/crear-cliente.dto';
 
 @Controller('clientes')
@@ -10,32 +22,40 @@ export class ClienteController {
     ) { }
 
 
-    /** 
-     *POST /clientes 
-     * Registra un nuevo cliente en el sistema */
-    @Post() async registrar(@Body() dto: CrearClienteDto) {
-        const cliente = await this.registrarClienteUseCase.execute({
+    @Post()
+    async registrar(@Body() dto: CrearClienteDto) {
+        const result = await this.registrarClienteUseCase.execute({
             nombre: dto.nombre, numeroDocumento: dto.numeroDocumento, telefono: dto.telefono, correo: dto.correo, domicilio: dto.domicilio,
         });
 
-        return { mensaje: 'Cliente registrado exitosamente', data: { id: cliente.id, nombre: cliente.nombre, numeroDocumento: cliente.numeroDocumento.value, correo: cliente.correo.value, telefono: cliente.telefono, domicilio: cliente.domicilio, }, };
+        if (!result.ok) {
+            this.lanzarErrorHttp(result.error);
+        }
+
+        return { mensaje: 'Cliente registrado exitosamente', data: ClienteRespuestaDto.fromDomain(result.value) };
     }
 
-    /** 
-     *GET /clientes/documento/:numeroDocumento 
-     * Obtiene un cliente por su número de documento */ 
-    @Get('documento/:numeroDocumento') async buscarPorDocumento(@Param('numeroDocumento') numeroDocumento: string) {
-         const cliente = await this.buscarClientePorDocumentoUseCase.execute(numeroDocumento); 
-         
-         return { 
-            data: { 
-                id: cliente.id, 
-                nombre: cliente.nombre, 
-                numeroDocumento: cliente.numeroDocumento.value, 
-                correo: cliente.correo.value, 
-                telefono: cliente.telefono, 
-                domicilio : cliente.domicilio, 
-            }, 
-        }; 
+    @Get('documento/:numeroDocumento')
+    async buscarPorDocumento(@Param('numeroDocumento') numeroDocumento: string) {
+        const result = await this.buscarClientePorDocumentoUseCase.execute(numeroDocumento);
+
+        if (!result.ok) {
+            this.lanzarErrorHttp(result.error);
+        }
+
+        return { data: ClienteRespuestaDto.fromDomain(result.value) };
+    }
+
+    private lanzarErrorHttp(error: ClienteError): never {
+        switch (error.code) {
+            case 'VALIDATION_ERROR':
+                throw new BadRequestException(error.message);
+            case 'DUPLICATE_DOCUMENT':
+                throw new ConflictException(error.message);
+            case 'CLIENT_NOT_FOUND':
+                throw new NotFoundException(error.message);
+            default:
+                throw new InternalServerErrorException(error.message);
+        }
     }
 }

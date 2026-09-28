@@ -1,5 +1,6 @@
-import { Injectable, Inject, ConflictException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { failure, success, type ClienteError, type Result } from '../result';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { ClienteEmail } from '../../domain/value-objects/cliente-email.vo';
 import { NumeroDocumento } from '../../domain/value-objects/numero-documento.vo';
@@ -20,24 +21,44 @@ export class RegistrarClienteUseCase {
         private readonly repository: ClienteRepositoryPort,
     ) { }
 
-    async execute(command: RegistrarClienteCommand): Promise<Cliente> {
-        // 1. Instanciamos los Value Objects (ejecutan sus reglas de validación en el constructor)
-        const documentoVO = new NumeroDocumento(command.numeroDocumento);
-        const emailVO = new ClienteEmail(command.correo);
+    async execute(command: RegistrarClienteCommand): Promise<Result<Cliente, ClienteError>> {
+        let documentoVO: NumeroDocumento;
+        let emailVO: ClienteEmail;
 
-        // 2. Regla de negocio: Verificar que no exista un cliente con el mismo documento
-        const clienteExistente = await this.repository.buscarPorDocumento(
-            documentoVO.value,
-        );
-        if (clienteExistente) {
-            throw new ConflictException(
-                `Ya existe un cliente registrado con el documento ${documentoVO.value}`,
-            );
+        try {
+            documentoVO = new NumeroDocumento(command.numeroDocumento);
+            emailVO = new ClienteEmail(command.correo);
+        } catch (error) {
+            if (error instanceof Error) {
+                return failure({ code: 'VALIDATION_ERROR', message: error.message });
+            }
+            return failure({ code: 'VALIDATION_ERROR', message: 'Los datos del cliente no son válidos.' });
         }
 
-        // 3. Crear la entidad de dominio con un ID único 
-        const nuevoCliente = new Cliente(randomUUID(), command.nombre, documentoVO,  emailVO, command.domicilio,command.telefono,);
-        // 4. Guardar a través del puerto abstracto 
-        return await this.repository.guardar(nuevoCliente);
+        try {
+            const clienteExistente = await this.repository.buscarPorDocumento(documentoVO.value);
+            if (clienteExistente) {
+                return failure({
+                    code: 'DUPLICATE_DOCUMENT',
+                    message: `Ya existe un cliente registrado con el documento ${documentoVO.value}`,
+                });
+            }
+
+            const nuevoCliente = new Cliente(
+                randomUUID(),
+                command.nombre,
+                documentoVO,
+                emailVO,
+                command.domicilio,
+                command.telefono,
+            );
+
+            return success(await this.repository.guardar(nuevoCliente));
+        } catch {
+            return failure({
+                code: 'PERSISTENCE_ERROR',
+                message: 'No fue posible registrar el cliente.',
+            });
+        }
     }
 }

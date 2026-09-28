@@ -1,7 +1,8 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { NumeroDocumento } from '../../domain/value-objects/numero-documento.vo';
 import { CLIENTE_REPOSITORY_PORT, type ClienteRepositoryPort, } from '../../domain/ports/cliente.repository-port';
+import { failure, success, type ClienteError, type Result } from '../result';
 
 
 @Injectable()
@@ -10,15 +11,33 @@ export class BuscarClientePorDocumentoUseCase {
     private readonly repository: ClienteRepositoryPort,
     ) { }
 
-    async execute(numeroDocumento: string): Promise<Cliente> {
-        // 1. Instanciamos el Value Object (valida formato y longitud antes de ir a BD)
-        const documentoVO = new NumeroDocumento(numeroDocumento);
+    async execute(numeroDocumento: string): Promise<Result<Cliente, ClienteError>> {
+        let documentoVO: NumeroDocumento;
 
-        // 2. Buscamos a través del puerto 
-        const cliente = await this.repository.buscarPorDocumento(documentoVO.value);
+        try {
+            documentoVO = new NumeroDocumento(numeroDocumento);
+        } catch (error) {
+            if (error instanceof Error) {
+                return failure({ code: 'VALIDATION_ERROR', message: error.message });
+            }
+            return failure({ code: 'VALIDATION_ERROR', message: 'El número de documento no es válido.' });
+        }
 
-        if (!cliente) { throw new NotFoundException(`Cliente con número de documento '${documentoVO.value}' no fue encontrado.`,); }
+        try {
+            const cliente = await this.repository.buscarPorDocumento(documentoVO.value);
+            if (!cliente) {
+                return failure({
+                    code: 'CLIENT_NOT_FOUND',
+                    message: `Cliente con número de documento '${documentoVO.value}' no fue encontrado.`,
+                });
+            }
 
-        return cliente;
+            return success(cliente);
+        } catch {
+            return failure({
+                code: 'PERSISTENCE_ERROR',
+                message: 'No fue posible consultar el cliente.',
+            });
+        }
     }
 }
