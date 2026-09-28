@@ -3,11 +3,14 @@ import { ProductoOrmEntity } from '../../../../stock/infraestructure/persistence
 import { ItemOrmEntity } from '../entities/item.orm-entity';
 
 export class ItemMapper {
-  static toDomain(raw: ItemOrmEntity): Item {
+  static toDomain(raw: ItemOrmEntity, compraId = raw.compra?.id): Item {
+    const idProducto = raw.producto?.id ?? raw.productoId;
+    if (!idProducto) throw new Error('No se pudo recuperar el producto del item.');
+
     return new Item(
       raw.id,
-      raw.compra.id,
-      raw.producto.id,
+      compraId ?? raw.compraId ?? '',
+      idProducto,
       raw.cantidad,
       Number(raw.valorUnitario),
       Number(raw.valorTotal),

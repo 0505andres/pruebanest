@@ -19,7 +19,7 @@ export class CompraOrmEntity {
   codigo!: string;
 
   @Column({ type: 'timestamp without time zone' })
-  fecha!: string;
+  fecha!: Date | string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   subtotal!: string;
@@ -29,6 +29,9 @@ export class CompraOrmEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   total!: string;
+
+  @Column({ type: 'boolean', default: false })
+  inventarioRestituido!: boolean;
 
   @OneToMany(() => ItemOrmEntity, (item) => item.compra, { cascade: true })
   items!: ItemOrmEntity[];

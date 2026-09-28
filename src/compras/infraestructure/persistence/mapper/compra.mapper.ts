@@ -10,11 +10,12 @@ export class CompraMapper {
       raw.cliente.id,
       raw.estado,
       raw.codigo,
-      raw.fecha,
+      CompraMapper.formatearFecha(raw.fecha),
       Number(raw.subtotal),
       Number(raw.impuesto),
       Number(raw.total),
-      (raw.items ?? []).map((item) => ItemMapper.toDomain(item)),
+      (raw.items ?? []).map((item) => ItemMapper.toDomain(item, raw.id)),
+      raw.inventarioRestituido,
     );
   }
 
@@ -28,11 +29,19 @@ export class CompraMapper {
     entity.subtotal = compra.subtotal.toFixed(2);
     entity.impuesto = compra.impuesto.toFixed(2);
     entity.total = compra.total.toFixed(2);
+    entity.inventarioRestituido = compra.inventarioRestituido;
     entity.items = compra.items.map((item) => {
       const itemEntity = ItemMapper.toPersistence(item);
       itemEntity.compra = entity;
       return itemEntity;
     });
     return entity;
+  }
+
+  private static formatearFecha(fecha: string | Date): string {
+    if (typeof fecha === 'string') return fecha;
+
+    const dosDigitos = (valor: number) => valor.toString().padStart(2, '0');
+    return `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())} ${dosDigitos(fecha.getHours())}:${dosDigitos(fecha.getMinutes())}:${dosDigitos(fecha.getSeconds())}`;
   }
 }

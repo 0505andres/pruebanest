@@ -16,6 +16,6 @@ import { SqlProductoRepository } from './infraestructure/persistence/repository/
     GetProductosUseCase,
   ],
   controllers: [ProductoController],
-  exports: [GetProductosUseCase],
+  exports: [GetProductosUseCase, PRODUCTO_REPOSITORY_PORT],
 })
 export class StockModule {}

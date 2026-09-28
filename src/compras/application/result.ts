@@ -2,6 +2,8 @@ export type CompraErrorCode =
   | 'VALIDATION_ERROR'
   | 'DUPLICATE_CODE'
   | 'COMPRA_NOT_FOUND'
+  | 'PRODUCTO_NOT_FOUND'
+  | 'STOCK_INSUFICIENTE'
   | 'PERSISTENCE_ERROR';
 
 export interface CompraError {

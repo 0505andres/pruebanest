@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
 import { ProductoOrmEntity } from '../../../../stock/infraestructure/persistence/entities/producto.orm-entity';
 import { CompraOrmEntity } from './compra.orm-entity';
 
@@ -11,9 +11,15 @@ export class ItemOrmEntity {
   @JoinColumn({ name: 'compra_id' })
   compra!: CompraOrmEntity;
 
+  @RelationId((item: ItemOrmEntity) => item.compra)
+  compraId!: string;
+
   @ManyToOne(() => ProductoOrmEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'producto_id' })
   producto!: ProductoOrmEntity;
+
+  @RelationId((item: ItemOrmEntity) => item.producto)
+  productoId!: string;
 
   @Column({ type: 'integer' })
   cantidad!: number;

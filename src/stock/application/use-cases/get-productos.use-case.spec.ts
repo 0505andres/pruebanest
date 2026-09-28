@@ -22,6 +22,8 @@ describe('GetProductosUseCase', () => {
   beforeEach(() => {
     repository = {
       getProductos: jest.fn(),
+      descontarStock: jest.fn(),
+      reponerStock: jest.fn(),
     };
     useCase = new GetProductosUseCase(repository);
   });

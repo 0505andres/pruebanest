@@ -36,6 +36,7 @@ export class CompraController {
   })
   @ApiBadRequestResponse({ description: 'Los datos de la compra no son válidos.' })
   @ApiConflictResponse({ description: 'Ya existe una compra con ese código.' })
+  @ApiNotFoundResponse({ description: 'No existe alguno de los productos solicitados.' })
   async registrar(@Body() dto: CrearCompraDto) {
     const result = await this.registrarCompraUseCase.execute(dto);
     if (!result.ok) this.lanzarErrorHttp(result.error);
@@ -82,6 +83,10 @@ export class CompraController {
         throw new ConflictException(error.message);
       case 'COMPRA_NOT_FOUND':
         throw new NotFoundException(error.message);
+      case 'PRODUCTO_NOT_FOUND':
+        throw new NotFoundException(error.message);
+      case 'STOCK_INSUFICIENTE':
+        throw new ConflictException(error.message);
       default:
         throw new InternalServerErrorException(error.message);
     }

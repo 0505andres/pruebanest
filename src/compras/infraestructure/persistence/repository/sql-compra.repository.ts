@@ -14,12 +14,15 @@ export class SqlCompraRepository implements CompraRepositoryPort {
   ) {}
 
   async guardarCompra(compra: Compra): Promise<Compra> {
-    const saved = await this.repository.save(CompraMapper.toPersistence(compra));
-    const complete = await this.repository.findOneOrFail({
-      where: { id: saved.id },
-      relations: { cliente: true, items: { producto: true } },
+    return this.repository.manager.transaction(async (manager) => {
+      const saved = await manager.save(CompraOrmEntity, CompraMapper.toPersistence(compra));
+      const complete = await manager.findOne(CompraOrmEntity, {
+        where: { id: saved.id },
+        relations: { cliente: true, items: { producto: true } },
+      });
+      if (!complete) throw new Error('No se pudo recuperar la compra guardada.');
+      return CompraMapper.toDomain(complete);
     });
-    return CompraMapper.toDomain(complete);
   }
 
   async buscarCompraPorCodigo(codigo: string): Promise<Compra | null> {
@@ -30,8 +33,12 @@ export class SqlCompraRepository implements CompraRepositoryPort {
     return entity ? CompraMapper.toDomain(entity) : null;
   }
 
-  async actualizarEstadoCompra(codigo: string, estado: string): Promise<Compra | null> {
-    const result = await this.repository.update({ codigo }, { estado });
+  async actualizarEstadoCompra(
+    codigo: string,
+    estado: string,
+    inventarioRestituido: boolean,
+  ): Promise<Compra | null> {
+    const result = await this.repository.update({ codigo }, { estado, inventarioRestituido });
     if (!result.affected) return null;
 
     const updated = await this.repository.findOne({
