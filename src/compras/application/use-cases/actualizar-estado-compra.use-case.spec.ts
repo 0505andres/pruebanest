@@ -51,6 +51,7 @@ describe('ActualizarEstadoCompraUseCase', () => {
     expect(productoRepository.descontarStock).not.toHaveBeenCalled();
     expect(registrarEnvioUseCase.execute).toHaveBeenCalledWith({
       compraId: compra.id,
+      codigoCompra: compra.codigo,
       fechaCompra: compra.fecha,
       domicilio: compra.domicilioCliente,
     });

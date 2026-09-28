@@ -8,6 +8,7 @@ describe('RegistrarEnvioUseCase', () => {
 
   const command: RegistrarEnvioCommand = {
     compraId: 'compra-1',
+    codigoCompra: '1234567',
     fechaCompra: '2026-09-28 10:30:00',
     domicilio: 'Calle 123',
   };
@@ -34,6 +35,7 @@ describe('RegistrarEnvioUseCase', () => {
     expect(result.value.estado).toBe('PROCESO');
     expect(result.value.domicilio).toBe(command.domicilio);
     expect(repository.guardarEnvio).toHaveBeenCalledWith(result.value);
+    expect(repository.estadoEnvioPorCompra).toHaveBeenCalledWith(command.codigoCompra);
   });
 
   it('devuelve error de validación para una fecha inválida', async () => {
@@ -52,6 +54,7 @@ describe('RegistrarEnvioUseCase', () => {
     repository.estadoEnvioPorCompra.mockResolvedValue(existing);
 
     await expect(useCase.execute(command)).resolves.toEqual({ ok: true, value: existing });
+    expect(repository.estadoEnvioPorCompra).toHaveBeenCalledWith(command.codigoCompra);
     expect(repository.guardarEnvio).not.toHaveBeenCalled();
   });
 

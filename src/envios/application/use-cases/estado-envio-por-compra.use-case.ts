@@ -10,16 +10,16 @@ export class EstadoEnvioPorCompraUseCase {
     private readonly repository: EnvioRepositoryPort,
   ) {}
 
-  async execute(compraId: string): Promise<Result<Envio, EnvioError>> {
-    if (!compraId || compraId.trim().length === 0) {
-      return failure({ code: 'VALIDATION_ERROR', message: 'La compra del envío es obligatoria.' });
+  async execute(codigoCompra: string): Promise<Result<Envio, EnvioError>> {
+    if (!/^\d{7}$/.test(codigoCompra)) {
+      return failure({ code: 'VALIDATION_ERROR', message: 'El código de compra debe tener 7 dígitos.' });
     }
 
     try {
-      const envio = await this.repository.estadoEnvioPorCompra(compraId);
+      const envio = await this.repository.estadoEnvioPorCompra(codigoCompra);
       return envio
         ? success(envio)
-        : failure({ code: 'ENVIO_NOT_FOUND', message: `No se encontró un envío para la compra ${compraId}.` });
+        : failure({ code: 'ENVIO_NOT_FOUND', message: `No se encontró un envío para la compra ${codigoCompra}.` });
     } catch {
       return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible consultar el estado del envío.' });
     }

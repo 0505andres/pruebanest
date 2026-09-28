@@ -6,6 +6,7 @@ import { failure, success, type EnvioError, type Result } from '../result';
 
 export interface RegistrarEnvioCommand {
   compraId: string;
+  codigoCompra: string;
   fechaCompra: string;
   domicilio: string;
 }
@@ -19,7 +20,7 @@ export class RegistrarEnvioUseCase {
 
   async execute(command: RegistrarEnvioCommand): Promise<Result<Envio, EnvioError>> {
     try {
-      const existing = await this.repository.estadoEnvioPorCompra(command.compraId);
+      const existing = await this.repository.estadoEnvioPorCompra(command.codigoCompra);
       if (existing) return success(existing);
     } catch {
       return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible consultar el envío existente.' });
@@ -46,7 +47,7 @@ export class RegistrarEnvioUseCase {
       return success(await this.repository.guardarEnvio(envio));
     } catch {
       try {
-        const existing = await this.repository.estadoEnvioPorCompra(command.compraId);
+        const existing = await this.repository.estadoEnvioPorCompra(command.codigoCompra);
         if (existing) return success(existing);
       } catch {
         return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible confirmar el envío registrado.' });

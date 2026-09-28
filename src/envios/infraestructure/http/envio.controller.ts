@@ -17,16 +17,16 @@ export class EnvioController {
     private readonly estadoEnvioPorCompraUseCase: EstadoEnvioPorCompraUseCase,
   ) {}
 
-  @Get('compra/:compraId')
-  @ApiOperation({ summary: 'Consultar el estado del envío por compra' })
-  @ApiParam({ name: 'compraId', example: 'b8e9c541-1b5c-4d78-9329-69efc85c5630' })
+  @Get('compra/:codigoCompra')
+  @ApiOperation({ summary: 'Consultar el estado del envío por código de compra' })
+  @ApiParam({ name: 'codigoCompra', example: '1234567', description: 'Código de compra de 7 dígitos.' })
   @ApiOkResponse({
     description: 'Estado del envío encontrado.',
     schema: { example: { data: { id: 'envio-uuid', compraId: 'compra-uuid', fechaEnvio: '2026-09-28', estado: 'ENVIADO', domicilio: 'Calle 123 #45-67' } } },
   })
   @ApiNotFoundResponse({ description: 'La compra todavía no tiene un envío registrado.' })
-  async estadoPorCompra(@Param('compraId') compraId: string) {
-    const result = await this.estadoEnvioPorCompraUseCase.execute(compraId);
+  async estadoPorCompra(@Param('codigoCompra') codigoCompra: string) {
+    const result = await this.estadoEnvioPorCompraUseCase.execute(codigoCompra);
     if (!result.ok) this.lanzarErrorHttp(result.error);
     return { data: EnvioRespuestaDto.fromDomain(result.value) };
   }

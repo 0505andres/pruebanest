@@ -22,9 +22,9 @@ export class SqlEnvioRepository implements EnvioRepositoryPort {
     return EnvioMapper.toDomain(complete);
   }
 
-  async estadoEnvioPorCompra(compraId: string): Promise<Envio | null> {
+  async estadoEnvioPorCompra(codigoCompra: string): Promise<Envio | null> {
     const entity = await this.repository.findOne({
-      where: { compra: { id: compraId } },
+      where: { compra: { codigo: codigoCompra } },
       relations: { compra: true },
     });
     return entity ? EnvioMapper.toDomain(entity) : null;

@@ -55,6 +55,7 @@ export class ActualizarEstadoCompraUseCase {
           if (estadoNormalizado === 'APPROVED') {
             const envio = await this.registrarEnvioUseCase.execute({
               compraId: compra.id,
+              codigoCompra: compra.codigo,
               fechaCompra: compra.fecha,
               domicilio: compra.domicilioCliente,
             });
