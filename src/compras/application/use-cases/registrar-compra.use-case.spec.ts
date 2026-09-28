@@ -11,7 +11,7 @@ describe('RegistrarCompraUseCase', () => {
   const command: RegistrarCompraCommand = {
     clienteId: 'cliente-1',
     subtotal: 100,
-    items: [{ productoId: 'producto-1', cantidad: 2, valorUnitario: 50, valorTotal: 100 }],
+    items: [{ productoId: 'producto-1', cantidad: 2 }],
   };
 
   beforeEach(() => {
@@ -22,7 +22,10 @@ describe('RegistrarCompraUseCase', () => {
     };
     productoRepository = {
       getProductos: jest.fn(),
-      descontarStock: jest.fn().mockResolvedValue({ ok: true }),
+      descontarStock: jest.fn().mockResolvedValue({
+        ok: true,
+        productos: [{ productoId: 'producto-1', valorUnitario: 50 }],
+      }),
       reponerStock: jest.fn().mockResolvedValue({ ok: true }),
     };
     useCase = new RegistrarCompraUseCase(repository, productoRepository);
@@ -43,6 +46,8 @@ describe('RegistrarCompraUseCase', () => {
     expect(result.value.impuesto).toBe(19);
     expect(result.value.total).toBe(119);
     expect(result.value.items).toHaveLength(1);
+    expect(result.value.items[0].valorUnitario).toBe(50);
+    expect(result.value.items[0].valorTotal).toBe(100);
     expect(repository.guardarCompra).toHaveBeenCalledWith(result.value);
     expect(productoRepository.descontarStock).toHaveBeenCalledWith([
       { productoId: 'producto-1', cantidad: 2 },
@@ -100,6 +105,22 @@ describe('RegistrarCompraUseCase', () => {
       { productoId: 'producto-1', cantidad: 2 },
     ]);
     expect(repository.guardarCompra).not.toHaveBeenCalled();
+  });
+
+  it('usa el precio devuelto por Stock para calcular el item', async () => {
+    repository.buscarCompraPorCodigo.mockResolvedValue(null);
+    productoRepository.descontarStock.mockResolvedValue({
+      ok: true,
+      productos: [{ productoId: 'producto-1', valorUnitario: 37.45 }],
+    });
+    repository.guardarCompra.mockImplementation(async (compra) => compra);
+
+    const result = await useCase.execute(command);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items[0].valorUnitario).toBe(37.45);
+    expect(result.value.items[0].valorTotal).toBe(74.9);
   });
 
   it('devuelve error de persistencia cuando falla el repositorio', async () => {

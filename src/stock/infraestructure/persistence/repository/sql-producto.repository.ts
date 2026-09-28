@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Producto } from '../../../domain/entities/producto.entity';
-import { ProductoCantidad, ProductoRepositoryPort, ResultadoMovimientoStock } from '../../../domain/ports/producto.repository-port';
+import { ProductoCantidad, ProductoRepositoryPort, ResultadoDescuentoStock, ResultadoMovimientoStock } from '../../../domain/ports/producto.repository-port';
 import { ProductoMapper } from '../mapper/producto.mapper';
 import { ProductoOrmEntity } from '../entities/producto.orm-entity';
 
@@ -18,7 +18,7 @@ export class SqlProductoRepository implements ProductoRepositoryPort {
     return entities.map((entity) => ProductoMapper.toDomain(entity));
   }
 
-  async descontarStock(items: ProductoCantidad[]): Promise<ResultadoMovimientoStock> {
+  async descontarStock(items: ProductoCantidad[]): Promise<ResultadoDescuentoStock> {
     try {
       return await this.repository.manager.transaction(async (manager) => {
         const productos = await this.cargarProductosBloqueados(manager, items);
@@ -41,7 +41,13 @@ export class SqlProductoRepository implements ProductoRepositoryPort {
           if (producto.cantidad === 0) producto.activo = false;
           await manager.save(producto);
         }
-        return { ok: true };
+        return {
+          ok: true,
+          productos: productos.value.map(({ producto }) => ({
+            productoId: producto.id,
+            valorUnitario: Number(producto.precio),
+          })),
+        };
       });
     } catch {
       return {

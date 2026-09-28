@@ -6,7 +6,7 @@ import { ConsultarCompraPorCodigoUseCase } from './consultar-compra-por-codigo.u
 describe('ConsultarCompraPorCodigoUseCase', () => {
   let repository: jest.Mocked<CompraRepositoryPort>;
   let useCase: ConsultarCompraPorCodigoUseCase;
-  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '1234567', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100, 100)]);
+  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '1234567', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100)]);
 
   beforeEach(() => {
     repository = {

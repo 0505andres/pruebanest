@@ -5,19 +5,30 @@ export interface ProductoCantidad {
   cantidad: number;
 }
 
+export interface ProductoPrecio {
+  productoId: string;
+  valorUnitario: number;
+}
+
+export interface ErrorMovimientoStock {
+  ok: false;
+  error: {
+    code: 'PRODUCTO_NOT_FOUND' | 'STOCK_INSUFICIENTE' | 'PERSISTENCE_ERROR';
+    message: string;
+  };
+}
+
 export type ResultadoMovimientoStock =
   | { ok: true }
-  | {
-      ok: false;
-      error: {
-        code: 'PRODUCTO_NOT_FOUND' | 'STOCK_INSUFICIENTE' | 'PERSISTENCE_ERROR';
-        message: string;
-      };
-    };
+  | ErrorMovimientoStock;
+
+export type ResultadoDescuentoStock =
+  | { ok: true; productos: ProductoPrecio[] }
+  | ErrorMovimientoStock;
 
 export interface ProductoRepositoryPort {
   getProductos(activos: boolean): Promise<Producto[]>;
-  descontarStock(items: ProductoCantidad[]): Promise<ResultadoMovimientoStock>;
+  descontarStock(items: ProductoCantidad[]): Promise<ResultadoDescuentoStock>;
   reponerStock(items: ProductoCantidad[]): Promise<ResultadoMovimientoStock>;
 }
 

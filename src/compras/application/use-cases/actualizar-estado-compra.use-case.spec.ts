@@ -10,7 +10,7 @@ describe('ActualizarEstadoCompraUseCase', () => {
   let productoRepository: jest.Mocked<ProductoRepositoryPort>;
   let registrarEnvioUseCase: jest.Mocked<RegistrarEnvioUseCase>;
   let useCase: ActualizarEstadoCompraUseCase;
-  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '1234567', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100, 100)], false, 'Calle Cliente 123');
+  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '1234567', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100)], false, 'Calle Cliente 123');
 
   beforeEach(() => {
     repository = {
@@ -20,7 +20,7 @@ describe('ActualizarEstadoCompraUseCase', () => {
     };
     productoRepository = {
       getProductos: jest.fn(),
-      descontarStock: jest.fn().mockResolvedValue({ ok: true }),
+      descontarStock: jest.fn().mockResolvedValue({ ok: true, productos: [] }),
       reponerStock: jest.fn().mockResolvedValue({ ok: true }),
     };
     registrarEnvioUseCase = {

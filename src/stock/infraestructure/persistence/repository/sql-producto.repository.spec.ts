@@ -28,10 +28,14 @@ describe('SqlProductoRepository inventory movements', () => {
       codigo: 'PROD001',
       cantidad: 2,
       activo: true,
+      precio: '12.50',
     });
     manager.findOne.mockResolvedValue(producto);
 
-    await expect(adapter.descontarStock([{ productoId: 'producto-1', cantidad: 2 }])).resolves.toEqual({ ok: true });
+    await expect(adapter.descontarStock([{ productoId: 'producto-1', cantidad: 2 }])).resolves.toEqual({
+      ok: true,
+      productos: [{ productoId: 'producto-1', valorUnitario: 12.5 }],
+    });
 
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(manager.findOne).toHaveBeenCalledWith(ProductoOrmEntity, {
@@ -80,13 +84,17 @@ describe('SqlProductoRepository inventory movements', () => {
   it('agrupa líneas repetidas del mismo producto antes de descontar', async () => {
     const producto = Object.assign(new ProductoOrmEntity(), {
       id: 'producto-1', codigo: 'PROD001', cantidad: 3, activo: true,
+      precio: '9.99',
     });
     manager.findOne.mockResolvedValue(producto);
 
     await expect(adapter.descontarStock([
       { productoId: 'producto-1', cantidad: 1 },
       { productoId: 'producto-1', cantidad: 2 },
-    ])).resolves.toEqual({ ok: true });
+    ])).resolves.toEqual({
+      ok: true,
+      productos: [{ productoId: 'producto-1', valorUnitario: 9.99 }],
+    });
 
     expect(manager.findOne).toHaveBeenCalledTimes(1);
     expect(manager.save).toHaveBeenCalledWith(expect.objectContaining({ cantidad: 0, activo: false }));

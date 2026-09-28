@@ -9,8 +9,6 @@ import { PRODUCTO_REPOSITORY_PORT, type ProductoRepositoryPort } from '../../../
 export interface RegistrarCompraItemCommand {
   productoId: string;
   cantidad: number;
-  valorUnitario: number;
-  valorTotal: number;
 }
 
 export interface RegistrarCompraCommand {
@@ -29,16 +27,57 @@ export class RegistrarCompraUseCase {
   ) {}
 
   async execute(command: RegistrarCompraCommand): Promise<Result<Compra, CompraError>> {
-    let compra: Compra;
+    if (!Array.isArray(command.items) || !command.items.length) {
+      return failure({ code: 'VALIDATION_ERROR', message: 'La compra debe tener al menos un item.' });
+    }
+    if (command.items.some((item) =>
+      !item.productoId || !Number.isInteger(item.cantidad) || item.cantidad <= 0,
+    )) {
+      return failure({ code: 'VALIDATION_ERROR', message: 'Cada item debe seleccionar un producto y una cantidad válida.' });
+    }
 
+    let codigo = '';
     try {
-      if (!Array.isArray(command.items) || !command.items.length) {
-        return failure({ code: 'VALIDATION_ERROR', message: 'La compra debe tener al menos un item.' });
+      let codigoDisponible = false;
+      for (let intento = 0; intento < 10; intento += 1) {
+        codigo = this.generarCodigo();
+        if (!(await this.compraRepository.buscarCompraPorCodigo(codigo))) {
+          codigoDisponible = true;
+          break;
+        }
       }
+
+      if (!codigoDisponible) {
+        return failure({ code: 'DUPLICATE_CODE', message: 'No fue posible generar un código único para la compra.' });
+      }
+    } catch {
+      return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible registrar la compra.' });
+    }
+
+    const productos = command.items.map(({ productoId, cantidad }) => ({ productoId, cantidad }));
+    let descuento;
+    try {
+      descuento = await this.productoRepository.descontarStock(productos);
+    } catch {
+      return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible reservar el inventario.' });
+    }
+    if (!descuento.ok) return failure(descuento.error);
+
+    let compra: Compra;
+    try {
+      const precios = new Map(
+        descuento.productos.map(({ productoId, valorUnitario }) => [productoId, valorUnitario]),
+      );
       const compraId = randomUUID();
-      const items = command.items.map((item) => new Item(
-        randomUUID(), compraId, item.productoId, item.cantidad, item.valorUnitario, item.valorTotal,
-      ));
+      const items = command.items.map((item) => {
+        const valorUnitario = precios.get(item.productoId);
+        if (valorUnitario === undefined) {
+          throw new Error(`No se pudo obtener el precio del producto ${item.productoId}.`);
+        }
+        return new Item(
+          randomUUID(), compraId, item.productoId, item.cantidad, valorUnitario,
+        );
+      });
       const impuesto = Number((command.subtotal * TASA_IMPUESTO_COMPRA).toFixed(2));
       const total = Number((command.subtotal + impuesto).toFixed(2));
       const fecha = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -46,7 +85,7 @@ export class RegistrarCompraUseCase {
         compraId,
         command.clienteId,
         'PENDIENTE',
-        this.generarCodigo(),
+        codigo,
         fecha,
         command.subtotal,
         impuesto,
@@ -54,6 +93,10 @@ export class RegistrarCompraUseCase {
         items,
       );
     } catch (error) {
+      const restitucion = await this.productoRepository.reponerStock(productos);
+      if (!restitucion.ok) {
+        return failure({ code: 'PERSISTENCE_ERROR', message: 'Falló la validación de la compra y la compensación del stock.' });
+      }
       return failure({
         code: 'VALIDATION_ERROR',
         message: error instanceof Error ? error.message : 'Los datos de la compra no son válidos.',
@@ -61,46 +104,12 @@ export class RegistrarCompraUseCase {
     }
 
     try {
-      let codigoDisponible = false;
-      for (let intento = 0; intento < 10; intento += 1) {
-        if (!(await this.compraRepository.buscarCompraPorCodigo(compra.codigo))) {
-          codigoDisponible = true;
-          break;
-        }
-        compra = new Compra(
-          compra.id,
-          compra.clienteId,
-          compra.estado,
-          this.generarCodigo(),
-          compra.fecha,
-          compra.subtotal,
-          compra.impuesto,
-          compra.total,
-          compra.items,
-        );
-      }
-
-      if (!codigoDisponible) {
-        return failure({ code: 'DUPLICATE_CODE', message: 'No fue posible generar un código único para la compra.' });
-      }
-
-      const productos = compra.items.map(({ productoId, cantidad }) => ({ productoId, cantidad }));
-      const descuento = await this.productoRepository.descontarStock(productos);
-      if (!descuento.ok) return failure(descuento.error);
-
-      try {
-        return success(await this.compraRepository.guardarCompra(compra));
-      } catch {
-        const restitucion = await this.productoRepository.reponerStock(productos);
-        if (!restitucion.ok) {
-          return failure({
-            code: 'PERSISTENCE_ERROR',
-            message: 'Falló el registro y también la compensación del stock.',
-          });
-        }
-        return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible registrar la compra.' });
-      }
+      return success(await this.compraRepository.guardarCompra(compra));
     } catch {
+      const restitucion = await this.productoRepository.reponerStock(productos);
+      if (!restitucion.ok) {
+        return failure({ code: 'PERSISTENCE_ERROR', message: 'Falló el registro y la compensación del stock.' });
+      }
       return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible registrar la compra.' });
     }
   }

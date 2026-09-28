@@ -13,7 +13,6 @@ export class ItemMapper {
       idProducto,
       raw.cantidad,
       Number(raw.valorUnitario),
-      Number(raw.valorTotal),
     );
   }
 

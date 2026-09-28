@@ -14,17 +14,6 @@ export class CrearCompraItemDto {
   @Min(1)
   cantidad!: number;
 
-  @ApiProperty({ example: 50.25, minimum: 0 })
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  valorUnitario!: number;
-
-  @ApiProperty({ example: 100.5, minimum: 0 })
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  valorTotal!: number;
 }
 
 export class CrearCompraDto {
