@@ -32,7 +32,7 @@ export class CompraController {
   @ApiOperation({ summary: 'Registrar una compra con sus items' })
   @ApiCreatedResponse({
     description: 'Compra registrada correctamente.',
-    schema: { example: { data: { id: 'uuid', clienteId: 'cliente-uuid', estado: 'PENDIENTE', codigo: '1234567', fecha: '2026-09-27 10:30:00', subtotal: 100.5, impuesto: 19.1, total: 119.6, items: [{ id: 'item-uuid', compraId: 'uuid', productoId: 'producto-uuid', cantidad: 2, valorUnitario: 50.25, valorTotal: 100.5 }] } } },
+    schema: { example: { data: { id: 'uuid', clienteId: 'cliente-uuid', estado: 'PENDIENTE', codigo: '7890-2026092810', fecha: '2026-09-27 10:30:00', subtotal: 100.5, impuesto: 19.1, total: 119.6, items: [{ id: 'item-uuid', compraId: 'uuid', productoId: 'producto-uuid', cantidad: 2, valorUnitario: 50.25, valorTotal: 100.5 }] } } },
   })
   @ApiBadRequestResponse({ description: 'Los datos de la compra no son válidos.' })
   @ApiConflictResponse({ description: 'Ya existe una compra con ese código.' })
@@ -45,10 +45,10 @@ export class CompraController {
 
   @Get('codigo/:codigo')
   @ApiOperation({ summary: 'Consultar una compra por código' })
-  @ApiParam({ name: 'codigo', example: '1234567' })
+  @ApiParam({ name: 'codigo', example: '7890-2026092810', description: 'Últimos cuatro dígitos del documento del cliente y fecha en formato YYYYMMDDHH.' })
   @ApiOkResponse({
     description: 'Compra encontrada.',
-    schema: { example: { data: { id: 'uuid', clienteId: 'cliente-uuid', estado: 'PENDIENTE', codigo: '1234567', fecha: '2026-09-27 10:30:00', subtotal: 100.5, impuesto: 19.1, total: 119.6, items: [] } } },
+    schema: { example: { data: { id: 'uuid', clienteId: 'cliente-uuid', estado: 'PENDIENTE', codigo: '7890-2026092810', fecha: '2026-09-27 10:30:00', subtotal: 100.5, impuesto: 19.1, total: 119.6, items: [] } } },
   })
   @ApiNotFoundResponse({ description: 'No se encontró la compra.' })
   async consultarPorCodigo(@Param('codigo') codigo: string) {
@@ -59,10 +59,10 @@ export class CompraController {
 
   @Patch(':codigo/estado')
   @ApiOperation({ summary: 'Actualizar el estado de una compra' })
-  @ApiParam({ name: 'codigo', example: '1234567' })
+  @ApiParam({ name: 'codigo', example: '7890-2026092810', description: 'Últimos cuatro dígitos del documento del cliente y fecha en formato YYYYMMDDHH.' })
   @ApiOkResponse({
     description: 'Estado de la compra actualizado.',
-    schema: { example: { data: { id: 'uuid', clienteId: 'cliente-uuid', estado: 'PAGADA', codigo: '1234567', fecha: '2026-09-27 10:30:00', subtotal: 100.5, impuesto: 19.1, total: 119.6, items: [] } } },
+    schema: { example: { data: { id: 'uuid', clienteId: 'cliente-uuid', estado: 'PAGADA', codigo: '7890-2026092810', fecha: '2026-09-27 10:30:00', subtotal: 100.5, impuesto: 19.1, total: 119.6, items: [] } } },
   })
   @ApiBadRequestResponse({ description: 'El estado no es válido.' })
   @ApiNotFoundResponse({ description: 'No se encontró la compra.' })
@@ -82,6 +82,7 @@ export class CompraController {
       case 'DUPLICATE_CODE':
         throw new ConflictException(error.message);
       case 'COMPRA_NOT_FOUND':
+      case 'CLIENTE_NOT_FOUND':
         throw new NotFoundException(error.message);
       case 'PRODUCTO_NOT_FOUND':
         throw new NotFoundException(error.message);

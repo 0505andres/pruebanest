@@ -10,7 +10,7 @@ describe('ActualizarEstadoCompraUseCase', () => {
   let productoRepository: jest.Mocked<ProductoRepositoryPort>;
   let registrarEnvioUseCase: jest.Mocked<RegistrarEnvioUseCase>;
   let useCase: ActualizarEstadoCompraUseCase;
-  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '1234567', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100)], false, 'Calle Cliente 123');
+  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '7890-2026092810', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100)], false, 'Calle Cliente 123');
 
   beforeEach(() => {
     repository = {
@@ -34,8 +34,8 @@ describe('ActualizarEstadoCompraUseCase', () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(compra);
     repository.actualizarEstadoCompra.mockResolvedValue(actualizada);
 
-    await expect(useCase.execute('1234567', 'PAGADA')).resolves.toEqual({ ok: true, value: actualizada });
-    expect(repository.actualizarEstadoCompra).toHaveBeenCalledWith('1234567', 'PAGADA', true);
+    await expect(useCase.execute('7890-2026092810', 'PAGADA')).resolves.toEqual({ ok: true, value: actualizada });
+    expect(repository.actualizarEstadoCompra).toHaveBeenCalledWith('7890-2026092810', 'PAGADA', true);
     expect(productoRepository.reponerStock).toHaveBeenCalledWith([
       { productoId: 'producto-1', cantidad: 1 },
     ]);
@@ -46,7 +46,7 @@ describe('ActualizarEstadoCompraUseCase', () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(compra);
     repository.actualizarEstadoCompra.mockResolvedValue(aprobada);
 
-    await expect(useCase.execute('1234567', 'APPROVED')).resolves.toMatchObject({ ok: true });
+    await expect(useCase.execute('7890-2026092810', 'APPROVED')).resolves.toMatchObject({ ok: true });
     expect(productoRepository.reponerStock).not.toHaveBeenCalled();
     expect(productoRepository.descontarStock).not.toHaveBeenCalled();
     expect(registrarEnvioUseCase.execute).toHaveBeenCalledWith({
@@ -62,7 +62,7 @@ describe('ActualizarEstadoCompraUseCase', () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(aprobada);
     repository.actualizarEstadoCompra.mockResolvedValue(aprobada);
 
-    await expect(useCase.execute('1234567', 'APPROVED')).resolves.toMatchObject({ ok: true });
+    await expect(useCase.execute('7890-2026092810', 'APPROVED')).resolves.toMatchObject({ ok: true });
 
     expect(registrarEnvioUseCase.execute).toHaveBeenCalledTimes(1);
     expect(productoRepository.descontarStock).not.toHaveBeenCalled();
@@ -71,14 +71,14 @@ describe('ActualizarEstadoCompraUseCase', () => {
   it('devuelve COMPRA_NOT_FOUND cuando el código no existe', async () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(null);
 
-    await expect(useCase.execute('1234567', 'PAGADA')).resolves.toEqual({
+    await expect(useCase.execute('7890-2026092810', 'PAGADA')).resolves.toEqual({
       ok: false,
-      error: { code: 'COMPRA_NOT_FOUND', message: expect.stringContaining('1234567') },
+      error: { code: 'COMPRA_NOT_FOUND', message: expect.stringContaining('7890-2026092810') },
     });
   });
 
   it('devuelve VALIDATION_ERROR cuando falta el estado', async () => {
-    await expect(useCase.execute('1234567', '')).resolves.toEqual({
+    await expect(useCase.execute('7890-2026092810', '')).resolves.toEqual({
       ok: false,
       error: { code: 'VALIDATION_ERROR', message: expect.any(String) },
     });
@@ -103,9 +103,9 @@ describe('ActualizarEstadoCompraUseCase', () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(cancelada);
     repository.actualizarEstadoCompra.mockResolvedValue(cancelada);
 
-    await useCase.execute('1234567', 'REJECTED');
+    await useCase.execute('7890-2026092810', 'REJECTED');
 
     expect(productoRepository.reponerStock).not.toHaveBeenCalled();
-    expect(repository.actualizarEstadoCompra).toHaveBeenCalledWith('1234567', 'REJECTED', true);
+    expect(repository.actualizarEstadoCompra).toHaveBeenCalledWith('7890-2026092810', 'REJECTED', true);
   });
 });

@@ -19,7 +19,7 @@ export class EnvioController {
 
   @Get('compra/:codigoCompra')
   @ApiOperation({ summary: 'Consultar el estado del envío por código de compra' })
-  @ApiParam({ name: 'codigoCompra', example: '1234567', description: 'Código de compra de 7 dígitos.' })
+  @ApiParam({ name: 'codigoCompra', example: '7890-2026092810', description: 'Últimos cuatro dígitos del documento, guion y fecha YYYYMMDDHH.' })
   @ApiOkResponse({
     description: 'Estado del envío encontrado.',
     schema: { example: { data: { id: 'envio-uuid', compraId: 'compra-uuid', fechaEnvio: '2026-09-28', estado: 'ENVIADO', domicilio: 'Calle 123 #45-67' } } },

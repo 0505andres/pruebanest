@@ -18,6 +18,6 @@ import { SqlClienteRepository } from './infraestructure/persistence/repository/s
     BuscarClientePorDocumentoUseCase,
   ],
   controllers: [ClienteController],
-  exports: [RegistrarClienteUseCase, BuscarClientePorDocumentoUseCase],
+  exports: [RegistrarClienteUseCase, BuscarClientePorDocumentoUseCase, CLIENTE_REPOSITORY_PORT],
 })
 export class ClientesModule {}

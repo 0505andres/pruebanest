@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { randomInt, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { failure, success, type CompraError, type Result } from '../result';
 import { Compra, TASA_IMPUESTO_COMPRA } from '../../domain/entities/compra.entity';
 import { Item } from '../../domain/entities/item.entity';
 import { COMPRA_REPOSITORY_PORT, type CompraRepositoryPort } from '../../domain/ports/compra.repository-port';
 import { PRODUCTO_REPOSITORY_PORT, type ProductoRepositoryPort } from '../../../stock/domain/ports/producto.repository-port';
+import { CLIENTE_REPOSITORY_PORT, type ClienteRepositoryPort } from '../../../clientes/domain/ports/cliente.repository-port';
 
 export interface RegistrarCompraItemCommand {
   productoId: string;
@@ -24,6 +25,8 @@ export class RegistrarCompraUseCase {
     private readonly compraRepository: CompraRepositoryPort,
     @Inject(PRODUCTO_REPOSITORY_PORT)
     private readonly productoRepository: ProductoRepositoryPort,
+    @Inject(CLIENTE_REPOSITORY_PORT)
+    private readonly clienteRepository: ClienteRepositoryPort,
   ) {}
 
   async execute(command: RegistrarCompraCommand): Promise<Result<Compra, CompraError>> {
@@ -36,11 +39,22 @@ export class RegistrarCompraUseCase {
       return failure({ code: 'VALIDATION_ERROR', message: 'Cada item debe seleccionar un producto y una cantidad válida.' });
     }
 
+    let ultimosDigitosDocumento: string;
+    try {
+      const cliente = await this.clienteRepository.buscarPorId(command.clienteId);
+      if (!cliente) {
+        return failure({ code: 'CLIENTE_NOT_FOUND', message: `No se encontró el cliente ${command.clienteId}.` });
+      }
+      ultimosDigitosDocumento = cliente.numeroDocumento.value.slice(-4);
+    } catch {
+      return failure({ code: 'PERSISTENCE_ERROR', message: 'No fue posible consultar el documento del cliente.' });
+    }
+
     let codigo = '';
     try {
       let codigoDisponible = false;
       for (let intento = 0; intento < 10; intento += 1) {
-        codigo = this.generarCodigo();
+        codigo = `${ultimosDigitosDocumento}-${this.generarCodigo()}`;
         if (!(await this.compraRepository.buscarCompraPorCodigo(codigo))) {
           codigoDisponible = true;
           break;
@@ -115,6 +129,14 @@ export class RegistrarCompraUseCase {
   }
 
   private generarCodigo(): string {
-    return randomInt(1_000_000, 10_000_000).toString();
+    const fecha = new Date();
+    const dosDigitos = (valor: number) => valor.toString().padStart(2, '0');
+
+    return [
+      fecha.getUTCFullYear().toString(),
+      dosDigitos(fecha.getUTCMonth() + 1),
+      dosDigitos(fecha.getUTCDate()),
+      dosDigitos(fecha.getUTCHours()),
+    ].join('');
   }
 }

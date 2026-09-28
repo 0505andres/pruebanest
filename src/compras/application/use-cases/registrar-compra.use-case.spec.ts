@@ -1,11 +1,16 @@
 import { Compra } from '../../domain/entities/compra.entity';
 import { CompraRepositoryPort } from '../../domain/ports/compra.repository-port';
 import { ProductoRepositoryPort } from '../../../stock/domain/ports/producto.repository-port';
+import { Cliente } from '../../../clientes/domain/entities/cliente.entity';
+import { ClienteRepositoryPort } from '../../../clientes/domain/ports/cliente.repository-port';
+import { ClienteEmail } from '../../../clientes/domain/value-objects/cliente-email.vo';
+import { NumeroDocumento } from '../../../clientes/domain/value-objects/numero-documento.vo';
 import { RegistrarCompraCommand, RegistrarCompraUseCase } from './registrar-compra.use-case';
 
 describe('RegistrarCompraUseCase', () => {
   let repository: jest.Mocked<CompraRepositoryPort>;
   let productoRepository: jest.Mocked<ProductoRepositoryPort>;
+  let clienteRepository: jest.Mocked<ClienteRepositoryPort>;
   let useCase: RegistrarCompraUseCase;
 
   const command: RegistrarCompraCommand = {
@@ -28,7 +33,19 @@ describe('RegistrarCompraUseCase', () => {
       }),
       reponerStock: jest.fn().mockResolvedValue({ ok: true }),
     };
-    useCase = new RegistrarCompraUseCase(repository, productoRepository);
+    clienteRepository = {
+      guardar: jest.fn(),
+      buscarPorDocumento: jest.fn(),
+      buscarPorId: jest.fn().mockResolvedValue(new Cliente(
+        'cliente-1',
+        'Cliente de prueba',
+        new NumeroDocumento('1234567890'),
+        new ClienteEmail('cliente@example.com'),
+        'Dirección de prueba',
+        '5551234567',
+      )),
+    };
+    useCase = new RegistrarCompraUseCase(repository, productoRepository, clienteRepository);
   });
 
   it('registra una compra con sus items cuando el código no existe', async () => {
@@ -40,7 +57,7 @@ describe('RegistrarCompraUseCase', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value).toBeInstanceOf(Compra);
-    expect(result.value.codigo).toMatch(/^\d{7}$/);
+    expect(result.value.codigo).toMatch(/^7890-\d{10}$/);
     expect(result.value.fecha).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     expect(result.value.estado).toBe('PENDIENTE');
     expect(result.value.impuesto).toBe(19);
@@ -52,6 +69,21 @@ describe('RegistrarCompraUseCase', () => {
     expect(productoRepository.descontarStock).toHaveBeenCalledWith([
       { productoId: 'producto-1', cantidad: 2 },
     ]);
+    expect(clienteRepository.buscarPorId).toHaveBeenCalledWith('cliente-1');
+  });
+
+  it('rechaza el registro cuando el cliente no existe', async () => {
+    clienteRepository.buscarPorId.mockResolvedValue(null);
+
+    await expect(useCase.execute(command)).resolves.toEqual({
+      ok: false,
+      error: {
+        code: 'CLIENTE_NOT_FOUND',
+        message: expect.stringContaining('cliente-1'),
+      },
+    });
+    expect(repository.buscarCompraPorCodigo).not.toHaveBeenCalled();
+    expect(productoRepository.descontarStock).not.toHaveBeenCalled();
   });
 
   it('devuelve conflicto cuando el código de compra ya existe', async () => {

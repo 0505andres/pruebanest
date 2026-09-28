@@ -29,4 +29,9 @@ import { ClienteMapper } from '../mapper/cliente.mapper';
     return entity ? ClienteMapper.toDomain(entity) : null;
   }
 
+  async buscarPorId(id: string): Promise<Cliente | null> {
+    const entity = await this.repository.findOne({ where: { id } });
+    return entity ? ClienteMapper.toDomain(entity) : null;
+  }
+
 }

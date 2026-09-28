@@ -22,8 +22,8 @@ export class Compra {
     if (!estado || estado.trim().length === 0) {
       throw new Error('El estado de la compra es obligatorio.');
     }
-    if (!/^\d{7}$/.test(codigo)) {
-      throw new Error('El código de la compra debe tener 7 dígitos.');
+    if (!/^(?:\d{4}-\d{10}|\d{14}|\d{7})$/.test(codigo)) {
+      throw new Error('El código de la compra debe tener los últimos cuatro dígitos del documento y el código de fecha.');
     }
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(fecha)) {
       throw new Error('La fecha debe tener el formato yyyy-mm-dd hh:mm:ss.');

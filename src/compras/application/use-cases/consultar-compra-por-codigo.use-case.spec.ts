@@ -6,7 +6,7 @@ import { ConsultarCompraPorCodigoUseCase } from './consultar-compra-por-codigo.u
 describe('ConsultarCompraPorCodigoUseCase', () => {
   let repository: jest.Mocked<CompraRepositoryPort>;
   let useCase: ConsultarCompraPorCodigoUseCase;
-  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '1234567', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100)]);
+  const compra = new Compra('compra-1', 'cliente-1', 'PENDIENTE', '7890-2026092810', '2026-09-27 10:30:00', 100, 19, 119, [new Item('item-1', 'compra-1', 'producto-1', 1, 100)]);
 
   beforeEach(() => {
     repository = {
@@ -20,16 +20,16 @@ describe('ConsultarCompraPorCodigoUseCase', () => {
   it('devuelve la compra encontrada', async () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(compra);
 
-    await expect(useCase.execute('1234567')).resolves.toEqual({ ok: true, value: compra });
-    expect(repository.buscarCompraPorCodigo).toHaveBeenCalledWith('1234567');
+    await expect(useCase.execute('7890-2026092810')).resolves.toEqual({ ok: true, value: compra });
+    expect(repository.buscarCompraPorCodigo).toHaveBeenCalledWith('7890-2026092810');
   });
 
   it('devuelve COMPRA_NOT_FOUND cuando no existe', async () => {
     repository.buscarCompraPorCodigo.mockResolvedValue(null);
 
-    await expect(useCase.execute('1234567')).resolves.toEqual({
+    await expect(useCase.execute('7890-2026092810')).resolves.toEqual({
       ok: false,
-      error: { code: 'COMPRA_NOT_FOUND', message: expect.stringContaining('1234567') },
+      error: { code: 'COMPRA_NOT_FOUND', message: expect.stringContaining('7890-2026092810') },
     });
   });
 

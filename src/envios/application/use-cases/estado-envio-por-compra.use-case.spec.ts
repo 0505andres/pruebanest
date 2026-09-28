@@ -18,30 +18,37 @@ describe('EstadoEnvioPorCompraUseCase', () => {
   it('devuelve el estado del envío asociado a la compra', async () => {
     repository.estadoEnvioPorCompra.mockResolvedValue(envio);
 
-    await expect(useCase.execute('1234567')).resolves.toEqual({ ok: true, value: envio });
-    expect(repository.estadoEnvioPorCompra).toHaveBeenCalledWith('1234567');
+    await expect(useCase.execute('7890-2026092810')).resolves.toEqual({ ok: true, value: envio });
+    expect(repository.estadoEnvioPorCompra).toHaveBeenCalledWith('7890-2026092810');
   });
 
   it('devuelve ENVIO_NOT_FOUND si la compra no tiene envío', async () => {
     repository.estadoEnvioPorCompra.mockResolvedValue(null);
 
-    await expect(useCase.execute('1234567')).resolves.toEqual({
+    await expect(useCase.execute('7890-2026092810')).resolves.toEqual({
       ok: false,
       error: {
         code: 'ENVIO_NOT_FOUND',
-        message: expect.stringContaining('1234567'),
+        message: expect.stringContaining('7890-2026092810'),
       },
     });
   });
 
-  it('rechaza identificadores que no sean códigos de compra de siete dígitos', async () => {
+  it('rechaza identificadores que no sean códigos de compra válidos', async () => {
     await expect(useCase.execute('compra-1')).resolves.toEqual({
       ok: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: expect.stringContaining('7 dígitos'),
+        message: expect.stringContaining('formato válido'),
       },
     });
     expect(repository.estadoEnvioPorCompra).not.toHaveBeenCalled();
+  });
+
+  it('permite consultar compras existentes con código legacy de siete dígitos', async () => {
+    repository.estadoEnvioPorCompra.mockResolvedValue(envio);
+
+    await expect(useCase.execute('1234567')).resolves.toEqual({ ok: true, value: envio });
+    expect(repository.estadoEnvioPorCompra).toHaveBeenCalledWith('1234567');
   });
 });

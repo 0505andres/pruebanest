@@ -8,7 +8,7 @@ describe('RegistrarEnvioUseCase', () => {
 
   const command: RegistrarEnvioCommand = {
     compraId: 'compra-1',
-    codigoCompra: '1234567',
+    codigoCompra: '7890-2026092810',
     fechaCompra: '2026-09-28 10:30:00',
     domicilio: 'Calle 123',
   };

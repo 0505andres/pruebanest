@@ -11,8 +11,8 @@ export class EstadoEnvioPorCompraUseCase {
   ) {}
 
   async execute(codigoCompra: string): Promise<Result<Envio, EnvioError>> {
-    if (!/^\d{7}$/.test(codigoCompra)) {
-      return failure({ code: 'VALIDATION_ERROR', message: 'El código de compra debe tener 7 dígitos.' });
+    if (!/^(?:\d{4}-\d{10}|\d{14}|\d{7})$/.test(codigoCompra)) {
+      return failure({ code: 'VALIDATION_ERROR', message: 'El código de compra no tiene un formato válido.' });
     }
 
     try {

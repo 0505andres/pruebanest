@@ -22,6 +22,7 @@ describe('BuscarClientePorDocumentoUseCase', () => {
     repository = {
       guardar: jest.fn(),
       buscarPorDocumento: jest.fn(),
+      buscarPorId: jest.fn(),
     };
     useCase = new BuscarClientePorDocumentoUseCase(repository);
   });

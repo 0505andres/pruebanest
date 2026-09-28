@@ -3,7 +3,10 @@ import { ClienteOrmEntity } from '../../../../clientes/infraestructure/persisten
 import { ItemOrmEntity } from './item.orm-entity';
 
 @Entity({ name: 'compras' })
-@Check('CHK_compras_codigo_siete_digitos', '"codigo" ~ \'^[0-9]{7}$\'')
+@Check(
+  'chk_compras_codigo_fecha_hora_o_legacy',
+  '"codigo" ~ \'^[0-9]{4}-[0-9]{10}$\' OR "codigo" ~ \'^[0-9]{14}$\' OR "codigo" ~ \'^[0-9]{7}$\'',
+)
 export class CompraOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -15,7 +18,7 @@ export class CompraOrmEntity {
   @Column({ type: 'varchar', length: 50, default: 'PENDIENTE' })
   estado!: string;
 
-  @Column({ type: 'varchar', length: 7, unique: true })
+  @Column({ type: 'varchar', length: 15, unique: true })
   codigo!: string;
 
   @Column({ type: 'timestamp without time zone' })

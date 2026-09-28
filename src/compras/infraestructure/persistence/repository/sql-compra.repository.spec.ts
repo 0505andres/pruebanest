@@ -18,10 +18,10 @@ describe('SqlCompraRepository', () => {
     repository.update.mockResolvedValue({ affected: 1 } as never);
     repository.findOne.mockResolvedValue(null);
 
-    await adapter.actualizarEstadoCompra('1234567', 'CANCELLED', true);
+    await adapter.actualizarEstadoCompra('7890-2026092810', 'CANCELLED', true);
 
     expect(repository.update).toHaveBeenCalledWith(
-      { codigo: '1234567' },
+      { codigo: '7890-2026092810' },
       { estado: 'CANCELLED', inventarioRestituido: true },
     );
   });

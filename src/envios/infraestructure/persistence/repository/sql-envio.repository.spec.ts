@@ -16,10 +16,10 @@ describe('SqlEnvioRepository', () => {
   it('busca el envío filtrando por el código de compra asociado', async () => {
     repository.findOne.mockResolvedValue(null);
 
-    await expect(adapter.estadoEnvioPorCompra('1234567')).resolves.toBeNull();
+    await expect(adapter.estadoEnvioPorCompra('7890-2026092810')).resolves.toBeNull();
 
     expect(repository.findOne).toHaveBeenCalledWith({
-      where: { compra: { codigo: '1234567' } },
+      where: { compra: { codigo: '7890-2026092810' } },
       relations: { compra: true },
     });
   });
