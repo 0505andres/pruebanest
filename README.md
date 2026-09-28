@@ -31,6 +31,17 @@
 $ npm install
 ```
 
+## PostgreSQL local
+
+Copy `.env.example` to `.env`, then start PostgreSQL with Docker Compose:
+
+```bash
+docker compose up -d postgres
+npm run start:dev
+```
+
+The database is available at `localhost:5432` and its data is stored in the `postgres_data` volume. `DB_SYNCHRONIZE=true` is intended for local development only; schema synchronization is disabled when `NODE_ENV=production`.
+
 ## Compile and run the project
 
 ```bash
