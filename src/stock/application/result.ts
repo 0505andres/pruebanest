@@ -1,0 +1,22 @@
+export type ProductoErrorCode = 'VALIDATION_ERROR' | 'PERSISTENCE_ERROR';
+
+export interface ProductoError {
+  code: ProductoErrorCode;
+  message: string;
+}
+
+export type Result<T, E> = Success<T> | Failure<E>;
+
+export interface Success<T> {
+  readonly ok: true;
+  readonly value: T;
+}
+
+export interface Failure<E> {
+  readonly ok: false;
+  readonly error: E;
+}
+
+export const success = <T>(value: T): Success<T> => ({ ok: true, value });
+
+export const failure = <E>(error: E): Failure<E> => ({ ok: false, error });
